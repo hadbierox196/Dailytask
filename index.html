@@ -170,7 +170,7 @@
 
     <div class="slider-modal">
         <input type="range" class="slider" min="0" max="100" value="0">
-        <button class="close-slider">Done</button>
+        <button type="button" class="close-slider">Done</button>
     </div>
 
     <script>
@@ -250,9 +250,9 @@
 
         function getProgressColor(progress) {
             progress = parseInt(progress);
-            if (progress < 33) return var(--red-orange);
-            if (progress < 66) return var(--yellow);
-            return var(--cyan);
+            if (progress < 33) return 'var(--red-orange)';
+            if (progress < 66) return 'var(--yellow)';
+            return 'var(--cyan)';
         }
 
         function renderTasks() {
