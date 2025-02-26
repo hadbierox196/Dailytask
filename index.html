@@ -77,7 +77,7 @@
 
         input {
             flex: 1;
-            background: var(--light-blue);
+            background: var(--blue);
             color: white;
         }
 
@@ -94,6 +94,7 @@
             gap: 1rem;
             position: relative;
             touch-action: none;
+            background: var(--blue);
         }
 
         .progress-circle {
@@ -137,6 +138,25 @@
             margin: 2rem 0;
         }
 
+        .completed-tasks {
+            margin-top: 2rem;
+        }
+
+        .completed-tasks h2 {
+            margin-bottom: 1rem;
+        }
+
+        .completed-tasks ul {
+            list-style: none;
+        }
+
+        .completed-tasks li {
+            background: var(--blue);
+            padding: 0.8rem;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+        }
+
         /* Mobile Optimization */
         @media (max-width: 480px) {
             input, button {
@@ -160,7 +180,6 @@
 
     <form class="task-form">
         <input type="text" placeholder="Task name" required>
-        <input type="time" required>
         <button type="submit">Add Task</button>
     </form>
 
@@ -171,51 +190,46 @@
         <button type="button" class="close-slider">Done</button>
     </div>
 
+    <div class="completed-tasks">
+        <h2>Weekly Progress</h2>
+        <button onclick="viewWeeklyProgress()">View Weekly Progress</button>
+        <div id="weekly-progress"></div>
+    </div>
+
     <script>
         const taskForm = document.querySelector('.task-form');
         const taskList = document.querySelector('.task-list');
         const sliderModal = document.querySelector('.slider-modal');
         const slider = document.querySelector('.slider');
+        const weeklyProgress = document.getElementById('weekly-progress');
         let currentTask = null;
 
-        // Color palette for tasks
-        const taskColors = [
-            'var(--cyan)',
-            'var(--red-orange)',
-            'var(--yellow)',
-            'var(--pink)',
-            'var(--light-blue)',
-            'var(--purple)'
-        ];
-
-        // Load tasks from localStorage
+        // Load tasks and completed tasks from localStorage
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let completedTasks = JSON.parse(localStorage.getItem('completedTasks')) || {};
 
         function saveTasks() {
             localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function saveCompletedTasks() {
+            localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
         }
 
         function toggleTaskForm() {
             taskForm.classList.toggle('active');
         }
 
-        function getRandomColor() {
-            return taskColors[Math.floor(Math.random() * taskColors.length)];
-        }
-
         function createTaskElement(task) {
             const taskEl = document.createElement('div');
             taskEl.className = 'task-item';
-            taskEl.style.background = task.color; // Assign a unique color to each task
             taskEl.innerHTML = `
                 <div class="progress-circle" style="color: ${getProgressColor(task.progress)}">
                     ${task.progress}
                 </div>
                 <div class="task-info">
                     <div>${task.name}</div>
-                    <div class="task-time">${task.time}</div>
                 </div>
-                <button class="delete-btn">✕</button>
             `;
 
             // Long press handling
@@ -229,12 +243,6 @@
 
             taskEl.addEventListener('touchend', () => {
                 clearTimeout(pressTimer);
-            });
-
-            taskEl.querySelector('.delete-btn').addEventListener('click', () => {
-                tasks = tasks.filter(t => t.id !== task.id);
-                saveTasks();
-                renderTasks();
             });
 
             return taskEl;
@@ -275,14 +283,68 @@
             });
         }
 
+        function clearTasksAtMidnight() {
+            const now = new Date();
+            const pakistanOffset = 5 * 60 * 60 * 1000; // Pakistan is UTC+5
+            const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+            const timeUntilMidnight = midnight - now - pakistanOffset;
+
+            setTimeout(() => {
+                // Move tasks to completed tasks
+                const week = getWeekNumber(new Date());
+                if (!completedTasks[week]) {
+                    completedTasks[week] = { successful: [], unsuccessful: [] };
+                }
+
+                tasks.forEach(task => {
+                    if (task.progress > 50) {
+                        completedTasks[week].successful.push(task);
+                    } else {
+                        completedTasks[week].unsuccessful.push(task);
+                    }
+                });
+
+                tasks = [];
+                saveTasks();
+                saveCompletedTasks();
+                renderTasks();
+
+                // Schedule next midnight
+                clearTasksAtMidnight();
+            }, timeUntilMidnight);
+        }
+
+        function getWeekNumber(date) {
+            const startOfYear = new Date(date.getFullYear(), 0, 1);
+            const pastDaysOfYear = (date - startOfYear) / 86400000;
+            return Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+        }
+
+        function viewWeeklyProgress() {
+            weeklyProgress.innerHTML = '';
+            const week = getWeekNumber(new Date());
+            if (completedTasks[week]) {
+                weeklyProgress.innerHTML = `
+                    <h3>Successful Tasks</h3>
+                    <ul>
+                        ${completedTasks[week].successful.map(task => `<li>${task.name} (${task.progress}%)</li>`).join('')}
+                    </ul>
+                    <h3>Unsuccessful Tasks</h3>
+                    <ul>
+                        ${completedTasks[week].unsuccessful.map(task => `<li>${task.name} (${task.progress}%)</li>`).join('')}
+                    </ul>
+                `;
+            } else {
+                weeklyProgress.innerHTML = '<p>No tasks completed this week.</p>';
+            }
+        }
+
         taskForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const task = {
                 id: Date.now(),
                 name: e.target[0].value,
-                time: e.target[1].value,
-                progress: 0,
-                color: getRandomColor() // Assign a random color to the task
+                progress: 0
             };
             tasks.push(task);
             saveTasks();
@@ -292,6 +354,7 @@
         });
 
         renderTasks();
+        clearTasksAtMidnight();
     </script>
 </body>
 </html>
