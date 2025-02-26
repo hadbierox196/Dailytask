@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Task Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cyan: #66E0C2;
+            --red-orange: #FF6B5B;
+            --yellow: #FDD55B;
+            --pink: #FF5B8D;
+            --blue: #6E6DB1;
+            --dark-blue: #232323;
+            --light-blue: #5BC0EB;
+            --purple: #8377C4;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        body {
+            background: var(--dark-blue);
+            color: white;
+            padding: 1rem;
+            min-height: 100vh;
+        }
+
+        .add-task-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        input, button {
+            padding: 0.8rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        input {
+            flex: 1;
+            background: var(--blue);
+            color: white;
+        }
+
+        button {
+            background: var(--purple);
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        button:active {
+            opacity: 0.8;
+        }
+
+        .task-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .task-item {
+            background: var(--blue);
+            padding: 1rem;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: linear-gradient(45deg, var(--purple), var(--blue));
+            position: relative;
+            touch-action: none;
+        }
+
+        .progress-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--dark-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .task-info {
+            flex: 1;
+        }
+
+        .task-time {
+            font-size: 0.8rem;
+            color: var(--cyan);
+        }
+
+        .slider-modal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--dark-blue);
+            padding: 2rem;
+            transform: translateY(100%);
+            transition: transform 0.3s;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .slider-modal.active {
+            transform: translateY(0);
+        }
+
+        .slider {
+            width: 100%;
+            margin: 2rem 0;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 480px) {
+            input, button {
+                padding: 0.6rem;
+                font-size: 0.9rem;
+            }
+            
+            .task-item {
+                padding: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <form class="add-task-form">
+        <input type="text" placeholder="Task name" required>
+        <input type="time" required>
+        <button type="submit">Add</button>
+    </form>
+
+    <div class="task-list"></div>
+
+    <div class="slider-modal">
+        <input type="range" class="slider" min="0" max="100" value="0">
+        <button class="close-slider">Done</button>
+    </div>
+
+    <script>
+        const taskForm = document.querySelector('.add-task-form');
+        const taskList = document.querySelector('.task-list');
+        const sliderModal = document.querySelector('.slider-modal');
+        const slider = document.querySelector('.slider');
+        let currentTask = null;
+
+        // Load tasks from localStorage
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function createTaskElement(task) {
+            const taskEl = document.createElement('div');
+            taskEl.className = 'task-item';
+            taskEl.innerHTML = `
+                <div class="progress-circle" style="color: ${getProgressColor(task.progress)}">
+                    ${task.progress}
+                </div>
+                <div class="task-info">
+                    <div>${task.name}</div>
+                    <div class="task-time">${task.time}</div>
+                </div>
+                <button class="delete-btn">✕</button>
+            `;
+
+            // Long press handling
+            let pressTimer;
+            taskEl.addEventListener('touchstart', (e) => {
+                pressTimer = setTimeout(() => {
+                    showSlider(task);
+                    e.preventDefault();
+                }, 500);
+            });
+
+            taskEl.addEventListener('touchend', () => {
+                clearTimeout(pressTimer);
+            });
+
+            taskEl.querySelector('.delete-btn').addEventListener('click', () => {
+                tasks = tasks.filter(t => t.id !== task.id);
+                saveTasks();
+                renderTasks();
+            });
+
+            return taskEl;
+        }
+
+        function showSlider(task) {
+            currentTask = task;
+            slider.value = task.progress;
+            sliderModal.classList.add('active');
+        }
+
+        slider.addEventListener('input', (e) => {
+            currentTask.progress = e.target.value;
+            document.querySelectorAll('.progress-circle').forEach(circle => {
+                if (circle.parentNode.querySelector('.task-info').textContent.includes(currentTask.name)) {
+                    circle.textContent = currentTask.progress;
+                    circle.style.color = getProgressColor(currentTask.progress);
+                }
+            });
+            saveTasks();
+        });
+
+        document.querySelector('.close-slider').addEventListener('click', () => {
+            sliderModal.classList.remove('active');
+        });
+
+        function getProgressColor(progress) {
+            progress = parseInt(progress);
+            if (progress < 33) return var(--red-orange);
+            if (progress < 66) return var(--yellow);
+            return var(--cyan);
+        }
+
+        function scheduleNotification(task) {
+            const [hours, minutes] = task.time.split(':');
+            const now = new Date();
+            const notificationTime = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate(),
+                hours,
+                minutes
+            );
+
+            if (notificationTime > now && Notification.permission === 'granted') {
+                setTimeout(() => {
+                    new Notification(`Task Reminder: ${task.name}`);
+                }, notificationTime - now);
+            }
+        }
+
+        function renderTasks() {
+            taskList.innerHTML = '';
+            tasks.forEach(task => {
+                taskList.appendChild(createTaskElement(task));
+                scheduleNotification(task);
+            });
+        }
+
+        taskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const task = {
+                id: Date.now(),
+                name: e.target[0].value,
+                time: e.target[1].value,
+                progress: 0
+            };
+            tasks.push(task);
+            saveTasks();
+            renderTasks();
+            taskForm.reset();
+        });
+
+        // Request notification permission
+        if (Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
+
+        renderTasks();
+    </script>
+</body>
+</html>
