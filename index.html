@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Task Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         :root {
             --cyan: #66E0C2;
@@ -31,10 +32,40 @@
             min-height: 100vh;
         }
 
-        .add-task-form {
+        .header {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .add-task-btn {
+            background: var(--purple);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s;
+        }
+
+        .add-task-btn:active {
+            opacity: 0.8;
+        }
+
+        .task-form {
+            display: none;
             gap: 0.5rem;
             margin-bottom: 2rem;
+        }
+
+        .task-form.active {
+            display: flex;
         }
 
         input, button {
@@ -48,17 +79,6 @@
             flex: 1;
             background: var(--blue);
             color: white;
-        }
-
-        button {
-            background: var(--purple);
-            color: white;
-            cursor: pointer;
-            transition: opacity 0.3s;
-        }
-
-        button:active {
-            opacity: 0.8;
         }
 
         .task-list {
@@ -133,10 +153,17 @@
     </style>
 </head>
 <body>
-    <form class="add-task-form">
+    <div class="header">
+        <h1>Daily Tasks</h1>
+        <button class="add-task-btn" onclick="toggleTaskForm()">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+
+    <form class="task-form">
         <input type="text" placeholder="Task name" required>
         <input type="time" required>
-        <button type="submit">Add</button>
+        <button type="submit">Add Task</button>
     </form>
 
     <div class="task-list"></div>
@@ -147,7 +174,7 @@
     </div>
 
     <script>
-        const taskForm = document.querySelector('.add-task-form');
+        const taskForm = document.querySelector('.task-form');
         const taskList = document.querySelector('.task-list');
         const sliderModal = document.querySelector('.slider-modal');
         const slider = document.querySelector('.slider');
@@ -158,6 +185,10 @@
 
         function saveTasks() {
             localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function toggleTaskForm() {
+            taskForm.classList.toggle('active');
         }
 
         function createTaskElement(task) {
@@ -224,29 +255,10 @@
             return var(--cyan);
         }
 
-        function scheduleNotification(task) {
-            const [hours, minutes] = task.time.split(':');
-            const now = new Date();
-            const notificationTime = new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate(),
-                hours,
-                minutes
-            );
-
-            if (notificationTime > now && Notification.permission === 'granted') {
-                setTimeout(() => {
-                    new Notification(`Task Reminder: ${task.name}`);
-                }, notificationTime - now);
-            }
-        }
-
         function renderTasks() {
             taskList.innerHTML = '';
             tasks.forEach(task => {
                 taskList.appendChild(createTaskElement(task));
-                scheduleNotification(task);
             });
         }
 
@@ -262,12 +274,8 @@
             saveTasks();
             renderTasks();
             taskForm.reset();
+            taskForm.classList.remove('active');
         });
-
-        // Request notification permission
-        if (Notification.permission !== 'granted') {
-            Notification.requestPermission();
-        }
 
         renderTasks();
     </script>
