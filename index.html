@@ -94,7 +94,6 @@
             gap: 1rem;
             position: relative;
             touch-action: none;
-            background: var(--blue);
         }
 
         .progress-circle {
@@ -140,6 +139,11 @@
 
         .completed-tasks {
             margin-top: 2rem;
+            display: none;
+        }
+
+        .completed-tasks.active {
+            display: block;
         }
 
         .completed-tasks h2 {
@@ -155,6 +159,14 @@
             padding: 0.8rem;
             border-radius: 10px;
             margin-bottom: 0.5rem;
+        }
+
+        .toggle-report-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
         }
 
         /* Mobile Optimization */
@@ -173,9 +185,12 @@
 <body>
     <div class="header">
         <h1>Daily Tasks</h1>
-        <button class="add-task-btn" onclick="toggleTaskForm()">
-            <i class="fas fa-plus"></i>
-        </button>
+        <div>
+            <button class="add-task-btn" onclick="toggleTaskForm()">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="toggle-report-btn" onclick="toggleWeeklyReport()">📊</button>
+        </div>
     </div>
 
     <form class="task-form">
@@ -192,7 +207,6 @@
 
     <div class="completed-tasks">
         <h2>Weekly Progress</h2>
-        <button onclick="viewWeeklyProgress()">View Weekly Progress</button>
         <div id="weekly-progress"></div>
     </div>
 
@@ -202,7 +216,18 @@
         const sliderModal = document.querySelector('.slider-modal');
         const slider = document.querySelector('.slider');
         const weeklyProgress = document.getElementById('weekly-progress');
+        const completedTasksSection = document.querySelector('.completed-tasks');
         let currentTask = null;
+
+        // Color palette for tasks
+        const taskColors = [
+            'var(--cyan)',
+            'var(--red-orange)',
+            'var(--yellow)',
+            'var(--pink)',
+            'var(--light-blue)',
+            'var(--purple)'
+        ];
 
         // Load tasks and completed tasks from localStorage
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
@@ -220,9 +245,21 @@
             taskForm.classList.toggle('active');
         }
 
+        function toggleWeeklyReport() {
+            completedTasksSection.classList.toggle('active');
+            if (completedTasksSection.classList.contains('active')) {
+                viewWeeklyProgress();
+            }
+        }
+
+        function getRandomColor() {
+            return taskColors[Math.floor(Math.random() * taskColors.length)];
+        }
+
         function createTaskElement(task) {
             const taskEl = document.createElement('div');
             taskEl.className = 'task-item';
+            taskEl.style.background = task.color; // Assign a unique color to each task
             taskEl.innerHTML = `
                 <div class="progress-circle" style="color: ${getProgressColor(task.progress)}">
                     ${task.progress}
@@ -344,7 +381,8 @@
             const task = {
                 id: Date.now(),
                 name: e.target[0].value,
-                progress: 0
+                progress: 0,
+                color: getRandomColor() // Assign a random color to the task
             };
             tasks.push(task);
             saveTasks();
