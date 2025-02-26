@@ -87,13 +87,11 @@
         }
 
         .task-item {
-            background: var(--blue);
             padding: 1rem;
             border-radius: 15px;
             display: flex;
             align-items: center;
             gap: 1rem;
-            background: linear-gradient(45deg, var(--purple), var(--blue));
             position: relative;
             touch-action: none;
         }
@@ -180,6 +178,16 @@
         const slider = document.querySelector('.slider');
         let currentTask = null;
 
+        // Color palette for tasks
+        const taskColors = [
+            'var(--cyan)',
+            'var(--red-orange)',
+            'var(--yellow)',
+            'var(--pink)',
+            'var(--light-blue)',
+            'var(--purple)'
+        ];
+
         // Load tasks from localStorage
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
@@ -191,9 +199,14 @@
             taskForm.classList.toggle('active');
         }
 
+        function getRandomColor() {
+            return taskColors[Math.floor(Math.random() * taskColors.length)];
+        }
+
         function createTaskElement(task) {
             const taskEl = document.createElement('div');
             taskEl.className = 'task-item';
+            taskEl.style.background = task.color; // Assign a unique color to each task
             taskEl.innerHTML = `
                 <div class="progress-circle" style="color: ${getProgressColor(task.progress)}">
                     ${task.progress}
@@ -268,7 +281,8 @@
                 id: Date.now(),
                 name: e.target[0].value,
                 time: e.target[1].value,
-                progress: 0
+                progress: 0,
+                color: getRandomColor() // Assign a random color to the task
             };
             tasks.push(task);
             saveTasks();
