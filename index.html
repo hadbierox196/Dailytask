@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
+        /* Your existing CSS styles */
+           :root {
             --cyan: #66E0C2;
             --red-orange: #FF6B5B;
             --yellow: #FDD55B;
@@ -321,30 +322,17 @@
         }
 
         function clearTasksAtMidnight() {
-    const now = new Date();
-    
-    // Calculate the time for 12:00 AM midnight PKT
-    const pakistanOffset = 5 * 60 * 60 * 1000; // Pakistan is UTC+5
-    const localTime = now.getTime();
-    
-    // Get the local time midnight in UTC
-    const midnightUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0));
-    
-    // Adjust midnight to Pakistan Standard Time
-    const midnightPKT = midnightUTC.getTime() + pakistanOffset;
+            const now = new Date();
+            const pakistanOffset = 5 * 60 * 60 * 1000; // Pakistan is UTC+5
+            const nowUTC = now.getTime() + (now.getTimezoneOffset() * 60 * 1000); // Convert local time to UTC
+            const nowPST = new Date(nowUTC + pakistanOffset); // Convert UTC to PST
 
-    // Calculate the time difference in milliseconds
-    const timeUntilMidnight = midnightPKT - localTime;
-    
-    // Log the time remaining until midnight
-    console.log(`Time until next midnight in PKT: ${timeUntilMidnight} milliseconds`);
-    
-    // Set a timeout to clear tasks at midnight
-    setTimeout(() => {
-        console.log("Clearing tasks at midnight PKT.");
-        // Add logic here to clear tasks
-    }, timeUntilMidnight);
-        }
+            // Calculate midnight in PST
+            const midnightPST = new Date(nowPST);
+            midnightPST.setHours(24, 0, 0, 0); // Set to midnight
+
+            // Calculate the time until midnight in PST
+            const timeUntilMidnight = midnightPST - nowPST;
 
             setTimeout(() => {
                 // Move tasks to completed tasks
