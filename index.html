@@ -30,7 +30,6 @@
             color: white;
             padding: 1rem;
             min-height: 100vh;
-            overflow: auto;
         }
 
         .header {
@@ -41,7 +40,7 @@
         }
 
         .add-task-btn {
-            background: var(--light-blue);
+            background: var(--purple);
             color: white;
             border: none;
             border-radius: 50%;
@@ -62,8 +61,6 @@
         .task-form {
             display: none;
             gap: 0.5rem;
-            font-color: white;
-            background: var(--light-blue);
             margin-bottom: 2rem;
         }
 
@@ -80,7 +77,7 @@
 
         input {
             flex: 1;
-            background: var(--light-blue);
+            background: var(--blue);
             color: white;
         }
 
@@ -197,7 +194,7 @@
     </div>
 
     <form class="task-form">
-        <input type="text" placeholder="Task name" required>
+        <input type="text" placeholder="" required>
         <button type="submit">Add Task</button>
     </form>
 
