@@ -321,10 +321,30 @@
         }
 
         function clearTasksAtMidnight() {
-            const now = new Date();
-            const pakistanOffset = 5 * 60 * 60 * 1000; // Pakistan is UTC+5
-            const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
-            const timeUntilMidnight = midnight - now - pakistanOffset;
+    const now = new Date();
+    
+    // Calculate the time for 12:00 AM midnight PKT
+    const pakistanOffset = 5 * 60 * 60 * 1000; // Pakistan is UTC+5
+    const localTime = now.getTime();
+    
+    // Get the local time midnight in UTC
+    const midnightUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0));
+    
+    // Adjust midnight to Pakistan Standard Time
+    const midnightPKT = midnightUTC.getTime() + pakistanOffset;
+
+    // Calculate the time difference in milliseconds
+    const timeUntilMidnight = midnightPKT - localTime;
+    
+    // Log the time remaining until midnight
+    console.log(`Time until next midnight in PKT: ${timeUntilMidnight} milliseconds`);
+    
+    // Set a timeout to clear tasks at midnight
+    setTimeout(() => {
+        console.log("Clearing tasks at midnight PKT.");
+        // Add logic here to clear tasks
+    }, timeUntilMidnight);
+        }
 
             setTimeout(() => {
                 // Move tasks to completed tasks
