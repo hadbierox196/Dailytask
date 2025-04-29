@@ -7,8 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        /* Your existing CSS styles */
-           :root {
+        :root {
             --cyan: #66E0C2;
             --red-orange: #FF6B5B;
             --yellow: #FDD55B;
@@ -170,7 +169,6 @@
             cursor: pointer;
         }
 
-        /* Mobile Optimization */
         @media (max-width: 480px) {
             input, button {
                 padding: 0.6rem;
@@ -220,7 +218,6 @@
         const completedTasksSection = document.querySelector('.completed-tasks');
         let currentTask = null;
 
-        // Color palette for tasks
         const taskColors = [
             'var(--cyan)',
             'var(--red-orange)',
@@ -230,7 +227,6 @@
             'var(--purple)'
         ];
 
-        // Load tasks and completed tasks from localStorage
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let completedTasks = JSON.parse(localStorage.getItem('completedTasks')) || {};
 
@@ -260,7 +256,7 @@
         function createTaskElement(task) {
             const taskEl = document.createElement('div');
             taskEl.className = 'task-item';
-            taskEl.style.background = task.color; // Assign a unique color to each task
+            taskEl.style.background = task.color;
             taskEl.innerHTML = `
                 <div class="progress-circle" style="color: ${getProgressColor(task.progress)}">
                     ${task.progress}
@@ -270,7 +266,6 @@
                 </div>
             `;
 
-            // Long press handling
             let pressTimer;
             taskEl.addEventListener('touchstart', (e) => {
                 pressTimer = setTimeout(() => {
@@ -323,38 +318,22 @@
 
         function clearTasksAtMidnight() {
             const now = new Date();
-            const pakistanOffset = 5 * 60 * 60 * 1000; // Pakistan is UTC+5
-            const nowUTC = now.getTime() + (now.getTimezoneOffset() * 60 * 1000); // Convert local time to UTC
-            const nowPST = new Date(nowUTC + pakistanOffset); // Convert UTC to PST
+            const pakistanOffset = 5 * 60 * 60 * 1000;
+            const nowUTC = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+            const nowPakistanTime = new Date(nowUTC + pakistanOffset);
 
-            // Calculate midnight in PST
-            const midnightPST = new Date(nowPST);
-            midnightPST.setHours(24, 0, 0, 0); // Set to midnight
+            const midnightPakistan = new Date(nowPakistanTime);
+            midnightPakistan.setHours(24, 0, 0, 0);
 
-            // Calculate the time until midnight in PST
-            const timeUntilMidnight = midnightPST - nowPST;
+            const timeUntilMidnight = midnightPakistan - nowPakistanTime;
 
             setTimeout(() => {
-                // Move tasks to completed tasks
-                const week = getWeekNumber(new Date());
-                if (!completedTasks[week]) {
-                    completedTasks[week] = { successful: [], unsuccessful: [] };
-                }
-
                 tasks.forEach(task => {
-                    if (task.progress > 50) {
-                        completedTasks[week].successful.push(task);
-                    } else {
-                        completedTasks[week].unsuccessful.push(task);
-                    }
+                    task.progress = 0;
                 });
-
-                tasks = [];
+                
                 saveTasks();
-                saveCompletedTasks();
                 renderTasks();
-
-                // Schedule next midnight
                 clearTasksAtMidnight();
             }, timeUntilMidnight);
         }
@@ -390,7 +369,7 @@
                 id: Date.now(),
                 name: e.target[0].value,
                 progress: 0,
-                color: getRandomColor() // Assign a random color to the task
+                color: getRandomColor()
             };
             tasks.push(task);
             saveTasks();
