@@ -227,7 +227,7 @@
     </div>
 
     <form class="task-form">
-        <input type="text" placeholder="Enter task name" required>
+        <input type="text" id="taskInput" placeholder="Enter task name" required>
         <button type="submit">Add Task</button>
     </form>
 
@@ -250,6 +250,7 @@
 
     <script>
         const taskForm = document.querySelector('.task-form');
+        const taskInput = document.getElementById('taskInput');
         const taskList = document.querySelector('.task-list');
         const sliderModal = document.querySelector('.slider-modal');
         const slider = document.querySelector('.slider');
@@ -293,6 +294,39 @@
         function getRandomColor() {
             return taskColors[Math.floor(Math.random() * taskColors.length)];
         }
+
+        // Add this function to generate unique IDs
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Add this function to add new tasks
+        function addTask(name) {
+            const newTask = {
+                id: generateId(),
+                name: name,
+                progress: 0,
+                color: getRandomColor(),
+                createdAt: new Date().toISOString()
+            };
+            
+            tasks.push(newTask);
+            saveTasks();
+            renderTasks();
+            return newTask;
+        }
+
+        // Add the form submit event listener
+        taskForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const taskName = taskInput.value.trim();
+            
+            if (taskName) {
+                addTask(taskName);
+                taskInput.value = '';
+                toggleTaskForm();
+            }
+        });
 
         function createTaskElement(task) {
             const taskEl = document.createElement('div');
