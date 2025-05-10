@@ -116,22 +116,7 @@
             color: var(--cyan);
         }
 
-        .task-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .delete-btn {
-            color: white;
-            background: rgba(0,0,0,0.3);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
+        /* Task actions removed as requested */
 
         .slider-modal {
             position: fixed;
@@ -321,11 +306,7 @@
                 <div class="task-info">
                     <div>${task.name}</div>
                 </div>
-                <div class="task-actions">
-                    <div class="delete-btn" onclick="deleteTask(${task.id})">
-                        <i class="fas fa-trash"></i>
-                    </div>
-                </div>
+                <!-- Task actions removed as requested -->
             `;
 
             taskEl.addEventListener('click', () => {
