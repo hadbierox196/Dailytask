@@ -331,6 +331,12 @@
             sliderValue.textContent = `${value}%`;
             currentTask.progress = parseInt(value);
             updateTaskProgress(currentTask);
+            
+            // If progress reaches 100%, move to completed immediately
+            if (currentTask.progress === 100) {
+                moveTaskToCompleted(currentTask);
+            }
+            
             saveTasks();
         });
 
@@ -340,6 +346,31 @@
                 progressCircle.textContent = `${task.progress}%`;
                 progressCircle.style.color = getProgressColor(task.progress);
             }
+        }
+
+        function moveTaskToCompleted(task) {
+            // Add to completed tasks
+            const week = getWeekNumber(new Date());
+            
+            if (!completedTasks[week]) {
+                completedTasks[week] = {
+                    successful: [],
+                    unsuccessful: []
+                };
+            }
+            
+            // Clone the task to avoid reference issues
+            const taskCopy = {...task};
+            completedTasks[week].successful.push(taskCopy);
+            saveCompletedTasks();
+            
+            // Remove from active tasks
+            tasks = tasks.filter(t => t.id !== task.id);
+            saveTasks();
+            
+            // Close slider modal and refresh task list
+            sliderModal.classList.remove('active');
+            renderTasks();
         }
 
         document.querySelector('.close-slider').addEventListener('click', () => {
@@ -382,6 +413,12 @@
             }, timeUntil1159PM);
         }
 
+        function getWeekNumber(date) {
+            const startOfYear = new Date(date.getFullYear(), 0, 1);
+            const pastDaysOfYear = (date - startOfYear) / 86400000;
+            return Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+        }
+
         function processTasksCompletion() {
             const week = getWeekNumber(new Date());
             
@@ -399,11 +436,8 @@
                 // Clone the task to avoid reference issues
                 const taskCopy = {...task};
                 
-                if (parseInt(task.progress) === 100) {
-                    completedTasks[week].successful.push(taskCopy);
-                } else {
-                    completedTasks[week].unsuccessful.push(taskCopy);
-                }
+                // Only uncompleted tasks are still in the list at midnight
+                completedTasks[week].unsuccessful.push(taskCopy);
             });
             
             // Reset all tasks' progress for the next day
@@ -414,12 +448,6 @@
             saveCompletedTasks();
             saveTasks();
             renderTasks();
-        }
-
-        function getWeekNumber(date) {
-            const startOfYear = new Date(date.getFullYear(), 0, 1);
-            const pastDaysOfYear = (date - startOfYear) / 86400000;
-            return Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
         }
 
         function viewWeeklyProgress() {
@@ -444,21 +472,6 @@
                 weeklyProgress.innerHTML = '<p>No tasks categorized this week.</p>';
             }
         }
-
-        taskForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const task = {
-                id: Date.now(),
-                name: e.target[0].value,
-                progress: 0,
-                color: getRandomColor()
-            };
-            tasks.push(task);
-            saveTasks();
-            renderTasks();
-            taskForm.reset();
-            taskForm.classList.remove('active');
-        });
 
         // Initialize
         renderTasks();
