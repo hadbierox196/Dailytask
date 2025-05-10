@@ -316,12 +316,7 @@
             return taskEl;
         }
 
-        function deleteTask(id) {
-            event.stopPropagation();
-            tasks = tasks.filter(task => task.id !== id);
-            saveTasks();
-            renderTasks();
-        }
+        // Delete function removed as requested
 
         function showSlider(task) {
             currentTask = task;
@@ -397,7 +392,10 @@
                 };
             }
             
-            tasks.forEach(task => {
+            // Make a copy of tasks before processing
+            const tasksCopy = [...tasks];
+            
+            tasksCopy.forEach(task => {
                 // Clone the task to avoid reference issues
                 const taskCopy = {...task};
                 
@@ -406,8 +404,10 @@
                 } else {
                     completedTasks[week].unsuccessful.push(taskCopy);
                 }
-                
-                // Reset progress for the next day
+            });
+            
+            // Reset all tasks' progress for the next day
+            tasks.forEach(task => {
                 task.progress = 0;
             });
             
@@ -432,7 +432,7 @@
                 weeklyProgress.innerHTML = `
                     <h3>Completed Tasks</h3>
                     ${successfulTasks.length > 0 ? 
-                        `<ul>${successfulTasks.map(task => `<li>${task.name} (${task.progress}%)</li>`).join('')}</ul>` : 
+                        `<ul>${successfulTasks.map(task => `<li>${task.name} (100%)</li>`).join('')}</ul>` : 
                         '<p>No completed tasks this week.</p>'}
                     
                     <h3>Uncompleted Tasks</h3>
