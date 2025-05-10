@@ -116,6 +116,23 @@
             color: var(--cyan);
         }
 
+        .task-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .delete-btn {
+            color: white;
+            background: rgba(0,0,0,0.3);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
         .slider-modal {
             position: fixed;
             bottom: 0;
@@ -126,6 +143,7 @@
             transform: translateY(100%);
             transition: transform 0.3s;
             border-radius: 20px 20px 0 0;
+            z-index: 100;
         }
 
         .slider-modal.active {
@@ -150,6 +168,12 @@
             margin-bottom: 1rem;
         }
 
+        .completed-tasks h3 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--cyan);
+        }
+
         .completed-tasks ul {
             list-style: none;
         }
@@ -167,6 +191,31 @@
             color: white;
             font-size: 1.5rem;
             cursor: pointer;
+        }
+
+        .close-slider {
+            background: var(--purple);
+            color: white;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+        }
+
+        .slider-value {
+            font-size: 1.5rem;
+            text-align: center;
+            color: var(--cyan);
+            margin-bottom: 1rem;
         }
 
         @media (max-width: 480px) {
@@ -193,13 +242,18 @@
     </div>
 
     <form class="task-form">
-        <input type="text" placeholder="" required>
+        <input type="text" placeholder="Enter task name" required>
         <button type="submit">Add Task</button>
     </form>
 
     <div class="task-list"></div>
 
     <div class="slider-modal">
+        <div class="modal-header">
+            <div class="modal-title">Update Progress</div>
+            <div class="task-name"></div>
+        </div>
+        <div class="slider-value">0%</div>
         <input type="range" class="slider" min="0" max="100" value="0">
         <button type="button" class="close-slider">Done</button>
     </div>
@@ -214,6 +268,8 @@
         const taskList = document.querySelector('.task-list');
         const sliderModal = document.querySelector('.slider-modal');
         const slider = document.querySelector('.slider');
+        const sliderValue = document.querySelector('.slider-value');
+        const taskNameElement = document.querySelector('.task-name');
         const weeklyProgress = document.getElementById('weekly-progress');
         const completedTasksSection = document.querySelector('.completed-tasks');
         let currentTask = null;
@@ -256,47 +312,59 @@
         function createTaskElement(task) {
             const taskEl = document.createElement('div');
             taskEl.className = 'task-item';
+            taskEl.dataset.id = task.id;
             taskEl.style.background = task.color;
             taskEl.innerHTML = `
                 <div class="progress-circle" style="color: ${getProgressColor(task.progress)}">
-                    ${task.progress}
+                    ${task.progress}%
                 </div>
                 <div class="task-info">
                     <div>${task.name}</div>
                 </div>
+                <div class="task-actions">
+                    <div class="delete-btn" onclick="deleteTask(${task.id})">
+                        <i class="fas fa-trash"></i>
+                    </div>
+                </div>
             `;
 
-            let pressTimer;
-            taskEl.addEventListener('touchstart', (e) => {
-                pressTimer = setTimeout(() => {
-                    showSlider(task);
-                    e.preventDefault();
-                }, 500);
-            });
-
-            taskEl.addEventListener('touchend', () => {
-                clearTimeout(pressTimer);
+            taskEl.addEventListener('click', () => {
+                showSlider(task);
             });
 
             return taskEl;
         }
 
+        function deleteTask(id) {
+            event.stopPropagation();
+            tasks = tasks.filter(task => task.id !== id);
+            saveTasks();
+            renderTasks();
+        }
+
         function showSlider(task) {
             currentTask = task;
             slider.value = task.progress;
+            sliderValue.textContent = `${task.progress}%`;
+            taskNameElement.textContent = task.name;
             sliderModal.classList.add('active');
         }
 
         slider.addEventListener('input', (e) => {
-            currentTask.progress = e.target.value;
-            document.querySelectorAll('.progress-circle').forEach(circle => {
-                if (circle.parentNode.querySelector('.task-info').textContent.includes(currentTask.name)) {
-                    circle.textContent = currentTask.progress;
-                    circle.style.color = getProgressColor(currentTask.progress);
-                }
-            });
+            const value = e.target.value;
+            sliderValue.textContent = `${value}%`;
+            currentTask.progress = parseInt(value);
+            updateTaskProgress(currentTask);
             saveTasks();
         });
+
+        function updateTaskProgress(task) {
+            const progressCircle = document.querySelector(`.task-item[data-id="${task.id}"] .progress-circle`);
+            if (progressCircle) {
+                progressCircle.textContent = `${task.progress}%`;
+                progressCircle.style.color = getProgressColor(task.progress);
+            }
+        }
 
         document.querySelector('.close-slider').addEventListener('click', () => {
             sliderModal.classList.remove('active');
@@ -316,26 +384,55 @@
             });
         }
 
-        function clearTasksAtMidnight() {
+        function categorizeTasksAtMidnight() {
             const now = new Date();
-            const pakistanOffset = 5 * 60 * 60 * 1000;
-            const nowUTC = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
-            const nowPakistanTime = new Date(nowUTC + pakistanOffset);
-
-            const midnightPakistan = new Date(nowPakistanTime);
-            midnightPakistan.setHours(24, 0, 0, 0);
-
-            const timeUntilMidnight = midnightPakistan - nowPakistanTime;
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            
+            // Calculate time until 11:59 PM
+            let timeUntil1159PM;
+            if (hours < 23 || (hours === 23 && minutes < 59)) {
+                // Same day
+                timeUntil1159PM = (23 - hours) * 60 * 60 * 1000 + (59 - minutes) * 60 * 1000;
+            } else {
+                // Next day
+                timeUntil1159PM = (24 + 23 - hours) * 60 * 60 * 1000 + (59 - minutes) * 60 * 1000;
+            }
 
             setTimeout(() => {
-                tasks.forEach(task => {
-                    task.progress = 0;
-                });
+                processTasksCompletion();
+                // Schedule next categorization
+                categorizeTasksAtMidnight();
+            }, timeUntil1159PM);
+        }
+
+        function processTasksCompletion() {
+            const week = getWeekNumber(new Date());
+            
+            if (!completedTasks[week]) {
+                completedTasks[week] = {
+                    successful: [],
+                    unsuccessful: []
+                };
+            }
+            
+            tasks.forEach(task => {
+                // Clone the task to avoid reference issues
+                const taskCopy = {...task};
                 
-                saveTasks();
-                renderTasks();
-                clearTasksAtMidnight();
-            }, timeUntilMidnight);
+                if (parseInt(task.progress) === 100) {
+                    completedTasks[week].successful.push(taskCopy);
+                } else {
+                    completedTasks[week].unsuccessful.push(taskCopy);
+                }
+                
+                // Reset progress for the next day
+                task.progress = 0;
+            });
+            
+            saveCompletedTasks();
+            saveTasks();
+            renderTasks();
         }
 
         function getWeekNumber(date) {
@@ -348,18 +445,22 @@
             weeklyProgress.innerHTML = '';
             const week = getWeekNumber(new Date());
             if (completedTasks[week]) {
+                const successfulTasks = completedTasks[week].successful || [];
+                const unsuccessfulTasks = completedTasks[week].unsuccessful || [];
+                
                 weeklyProgress.innerHTML = `
-                    <h3>Successful Tasks</h3>
-                    <ul>
-                        ${completedTasks[week].successful.map(task => `<li>${task.name} (${task.progress}%)</li>`).join('')}
-                    </ul>
-                    <h3>Unsuccessful Tasks</h3>
-                    <ul>
-                        ${completedTasks[week].unsuccessful.map(task => `<li>${task.name} (${task.progress}%)</li>`).join('')}
-                    </ul>
+                    <h3>Completed Tasks</h3>
+                    ${successfulTasks.length > 0 ? 
+                        `<ul>${successfulTasks.map(task => `<li>${task.name} (${task.progress}%)</li>`).join('')}</ul>` : 
+                        '<p>No completed tasks this week.</p>'}
+                    
+                    <h3>Uncompleted Tasks</h3>
+                    ${unsuccessfulTasks.length > 0 ? 
+                        `<ul>${unsuccessfulTasks.map(task => `<li>${task.name} (${task.progress}%)</li>`).join('')}</ul>` : 
+                        '<p>No uncompleted tasks this week.</p>'}
                 `;
             } else {
-                weeklyProgress.innerHTML = '<p>No tasks completed this week.</p>';
+                weeklyProgress.innerHTML = '<p>No tasks categorized this week.</p>';
             }
         }
 
@@ -378,8 +479,9 @@
             taskForm.classList.remove('active');
         });
 
+        // Initialize
         renderTasks();
-        clearTasksAtMidnight();
+        categorizeTasksAtMidnight();
     </script>
 </body>
 </html>
